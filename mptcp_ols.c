@@ -171,7 +171,7 @@ static u32 get_transfer_time(struct sock* sk, struct sk_buff *skb, bool add_delt
 	transfer_time += div_u64((u64)unsent_bytes * USEC_PER_SEC, rate); /* us */
 
 	if (info){
-		printk("ytxing: get_transfer_time sk:%p transfer_time:%llu unsent_bytes:%u rate:%u srtt(us):%u\n", sk, transfer_time, unsent_bytes, rate, tp->srtt_us >> 3);
+		mptcp_debug("ytxing: get_transfer_time sk:%p transfer_time:%llu unsent_bytes:%u rate:%u srtt(us):%u\n", sk, transfer_time, unsent_bytes, rate, tp->srtt_us >> 3);
 	}
 	if (!add_delta || !tp->srtt_us || !tp->rttvar_us)
 		return transfer_time;
@@ -189,7 +189,7 @@ static u32 get_transfer_time(struct sock* sk, struct sk_buff *skb, bool add_delt
 static void ols_show_subflow(struct sock *meta_sk,
 					     struct sk_buff *skb)
 {
-	//printk(KERN_INFO "ytxing: ytxing: ***ols_get_fastest_subflow***\n");
+	//mptcp_debug(KERN_INFO "ytxing: ytxing: ***ols_get_fastest_subflow***\n");
 	struct tcp_sock *meta_tp = tcp_sk(meta_sk);
 	struct mptcp_cb *mpcb = meta_tp->mpcb;
 	struct mptcp_tcp_sock *mptcp;
@@ -200,9 +200,9 @@ static void ols_show_subflow(struct sock *meta_sk,
 	mptcp_for_each_sub(mpcb, mptcp) {
 		tp_t = mptcp->tp;
 		sk_t = mptcp_to_sock(mptcp);
-		// printk(KERN_INFO "ytxing: ols_get_fastest_subflow sk:%p \n", sk_t);
+		// mptcp_debug(KERN_INFO "ytxing: ols_get_fastest_subflow sk:%p \n", sk_t);
 		if (mptcp_is_def_unavailable(sk_t)){
-			// printk(KERN_INFO "ytxing: mptcp_is_def_unavailable sk:%p \n", sk_t);
+			// mptcp_debug(KERN_INFO "ytxing: mptcp_is_def_unavailable sk:%p \n", sk_t);
 			continue;
 		}
 
@@ -219,7 +219,7 @@ static void ols_show_subflow(struct sock *meta_sk,
 static struct sock *ols_get_fastest_subflow(struct sock *meta_sk,
 					     struct sk_buff *skb)
 {
-	//printk(KERN_INFO "ytxing: ytxing: ***ols_get_fastest_subflow***\n");
+	//mptcp_debug(KERN_INFO "ytxing: ytxing: ***ols_get_fastest_subflow***\n");
 	struct tcp_sock *meta_tp = tcp_sk(meta_sk);
 	struct mptcp_cb *mpcb = meta_tp->mpcb;
 	struct mptcp_tcp_sock *mptcp;
@@ -231,35 +231,35 @@ static struct sock *ols_get_fastest_subflow(struct sock *meta_sk,
 	mptcp_for_each_sub(mpcb, mptcp) {
 		tp_t = mptcp->tp;
 		sk_t = mptcp_to_sock(mptcp);
-		// printk(KERN_INFO "ytxing: ols_get_fastest_subflow sk:%p \n", sk_t);
+		// mptcp_debug(KERN_INFO "ytxing: ols_get_fastest_subflow sk:%p \n", sk_t);
 		if (mptcp_is_def_unavailable(sk_t)){
-			// printk(KERN_INFO "ytxing: mptcp_is_def_unavailable sk:%p \n", sk_t);
+			// mptcp_debug(KERN_INFO "ytxing: mptcp_is_def_unavailable sk:%p \n", sk_t);
 			continue;
 		}
 
 		transfer_time = get_transfer_time(sk_t, skb, false, false);
 
 		if(!transfer_time){
-			//printk(KERN_INFO "ytxing: zy: sk%u has 0 transfer_time\n", sk_t);
+			//mptcp_debug(KERN_INFO "ytxing: zy: sk%u has 0 transfer_time\n", sk_t);
 			continue;
 		}
 		if(transfer_time < min_transfer_time){
 			min_transfer_time = transfer_time;
 			best_sk = sk_t;
-			//printk(KERN_INFO "ytxing: ytxing: sk%u has transfer_time%u\n", best_sk, min_transfer_time >> 3);
+			//mptcp_debug(KERN_INFO "ytxing: ytxing: sk%u has transfer_time%u\n", best_sk, min_transfer_time >> 3);
 		}
 	}
 	//if(best_sk){
-		//printk(KERN_INFO "ytxing: ytxing: best_sk%u has min_transfer_time%u\n", best_sk, min_transfer_time >> 3);
+		//mptcp_debug(KERN_INFO "ytxing: ytxing: best_sk%u has min_transfer_time%u\n", best_sk, min_transfer_time >> 3);
 	//}
-	//printk(KERN_INFO "ytxing: ytxing: ---ols_get_fastest_subflow---\n");
+	//mptcp_debug(KERN_INFO "ytxing: ytxing: ---ols_get_fastest_subflow---\n");
 	return best_sk;
 }
 
 static struct sock *ols_get_second_subflow(struct sock *meta_sk,
 					     struct sk_buff *skb)
 {
-	//printk(KERN_INFO "ytxing: ytxing: ***ols_get_second_subflow***\n");
+	//mptcp_debug(KERN_INFO "ytxing: ytxing: ***ols_get_second_subflow***\n");
 	struct tcp_sock *meta_tp = tcp_sk(meta_sk);
 	struct mptcp_cb *mpcb = meta_tp->mpcb;
 	struct mptcp_tcp_sock *mptcp;
@@ -289,9 +289,9 @@ static struct sock *ols_get_second_subflow(struct sock *meta_sk,
 		}
 	}
 	//if(second_sk){
-		//printk(KERN_INFO "ytxing: ytxing: second_sk%u has min_transfer_time%u\n", second_sk, min_transfer_time >> 3);
+		//mptcp_debug(KERN_INFO "ytxing: ytxing: second_sk%u has min_transfer_time%u\n", second_sk, min_transfer_time >> 3);
 	//}
-	//printk(KERN_INFO "ytxing: ytxing: ---ols_get_second_subflow---\n");
+	//mptcp_debug(KERN_INFO "ytxing: ytxing: ---ols_get_second_subflow---\n");
 	return second_sk;
 }
 
@@ -353,11 +353,11 @@ static bool ols_check_quota(struct sock *meta_sk, struct sock *sk, bool new_flag
 		if(ols_p->red_quota)
 			ols_p->red_quota -= 1;
 		else{
-			printk(KERN_INFO "ytxing: no enough red_quota sk:%p\n",sk);
+			mptcp_debug(KERN_INFO "ytxing: no enough red_quota sk:%p\n",sk);
 			return false;
 		}
 	}
-	printk(KERN_INFO "ytxing: ols_check_quota sk:%p new_flag:%u red_quota:%u new_quota:%u\n",sk, new_flags, ols_p->red_quota, ols_p->new_quota);
+	mptcp_debug(KERN_INFO "ytxing: ols_check_quota sk:%p new_flag:%u red_quota:%u new_quota:%u\n",sk, new_flags, ols_p->red_quota, ols_p->new_quota);
 	return true;
 }
 
@@ -394,7 +394,7 @@ bool subsk_cwnd_full(struct sock *sk){
 	const struct tcp_sock *tp = tcp_sk(sk);
 	u32 queued = sk->sk_write_queue.qlen + tcp_packets_in_flight(tp);
 	
-	printk(KERN_INFO "ytxing: subsk_cwnd_full sk:%p queued:%u cwnd:%u\n", sk, queued, tp->snd_cwnd);
+	mptcp_debug(KERN_INFO "ytxing: subsk_cwnd_full sk:%p queued:%u cwnd:%u\n", sk, queued, tp->snd_cwnd);
 	/* is there still space? */
 	return queued >= tp->snd_cwnd;
 }
@@ -408,7 +408,7 @@ bool all_cwnd_full_check(struct sock *meta_sk)
 	mptcp_for_each_sub(mpcb, mptcp) {
 		struct sock *sk = mptcp_to_sock(mptcp);
 		// if (!mptcp_is_def_unavailable(sk)){
-		// 	printk(KERN_INFO "ytxing: mptcp_is_def_unavailable sk:%p \n", sk);
+		// 	mptcp_debug(KERN_INFO "ytxing: mptcp_is_def_unavailable sk:%p \n", sk);
 		// 	continue;
 		// }
 		if (!subsk_cwnd_full(sk))
@@ -434,7 +434,7 @@ bool overlap_check(struct sock *meta_sk, struct sk_buff *skb )
 
 	if(get_transfer_time(best_sk, skb, true, false) < get_transfer_time(second_sk, skb, false, false))
 		return false;
-	printk(KERN_INFO "ytxing: overlap_check overlapped!\n");
+	mptcp_debug(KERN_INFO "ytxing: overlap_check overlapped!\n");
 	return true;
 }
 
@@ -448,7 +448,7 @@ static struct sock *ols_get_available_subflow(struct sock *meta_sk,
 	struct sock *sk = NULL, *bestsk = NULL, *backupsk = NULL;
 	struct mptcp_tcp_sock *mptcp;
 
-	printk(KERN_INFO "ytxing: ***********************ols_get_available_subflow**************************\n");
+	mptcp_debug(KERN_INFO "ytxing: ***********************ols_get_available_subflow**************************\n");
 	/* Answer data_fin on same subflow!!! */
 	if (meta_sk->sk_shutdown & RCV_SHUTDOWN &&
 	    skb && mptcp_is_data_fin(skb)) {
@@ -526,7 +526,7 @@ static struct sk_buff *mptcp_ols_next_segment(struct sock *meta_sk,
 					     struct sock **subsk,
 					     unsigned int *limit)
 {
-	printk(KERN_INFO "ytxing: ***********************mptcp_ols_next_segment**************************\n");
+	mptcp_debug(KERN_INFO "ytxing: ***********************mptcp_ols_next_segment**************************\n");
 	struct sk_buff *skb = __mptcp_ols_next_segment(meta_sk, reinject);
 	struct tcp_sock *meta_tp = tcp_sk(meta_sk);
 	struct sock *best_sk = NULL, *second_sk = NULL;
@@ -553,7 +553,7 @@ static struct sk_buff *mptcp_ols_next_segment(struct sock *meta_sk,
 
 	cwnd_full_flag = all_cwnd_full_check(meta_sk);
 	if(cwnd_full_flag){
-		printk(KERN_INFO "ytxing: all subflow cwnd full\n");
+		mptcp_debug(KERN_INFO "ytxing: all subflow cwnd full\n");
 		return NULL;
 	}
 
@@ -567,19 +567,19 @@ static struct sk_buff *mptcp_ols_next_segment(struct sock *meta_sk,
 		 * the current skb will do, we find the best_tp with shortest transfer time
 		 */
 		 
-		//printk(KERN_INFO "ytxing: ytxing: !previous_tp, just send a new packet\n");
+		//mptcp_debug(KERN_INFO "ytxing: ytxing: !previous_tp, just send a new packet\n");
 		
 		best_sk = ols_get_fastest_subflow(meta_sk, skb);//TODO shan qu add_delta
 		ols_show_subflow(meta_sk, skb);
 		
 		if(unlikely(!best_sk)){
-			printk(KERN_INFO "ytxing: Nothing new to send, because no best_sk, strange\n");
+			mptcp_debug(KERN_INFO "ytxing: Nothing new to send, because no best_sk, strange\n");
 			return NULL;
 		}
 
 		//if (!mptcp_rr_is_available(choose_sk, skb, false, true))
 		if (!mptcp_rr_is_available(best_sk, skb, false, false)){//ytxing: no congestion window test
-			printk(KERN_INFO "ytxing: Nothing to send, best_sk:%p is not allowed to send skb%u\n", best_sk, TCP_SKB_CB(skb)->end_seq);
+			mptcp_debug(KERN_INFO "ytxing: Nothing to send, best_sk:%p is not allowed to send skb%u\n", best_sk, TCP_SKB_CB(skb)->end_seq);
 			return NULL;
 		}
 		best_tp = tcp_sk(best_sk);
@@ -595,17 +595,17 @@ static struct sk_buff *mptcp_ols_next_segment(struct sock *meta_sk,
 			ols_cb->previous_tp = best_tp;
 			ols_p->skb = skb;
 			ols_p->skb_end_seq = TCP_SKB_CB(skb)->end_seq;
-			printk(KERN_INFO "ytxing: ytxing: we need redundant packet, cb and priv are set\n");
+			mptcp_debug(KERN_INFO "ytxing: ytxing: we need redundant packet, cb and priv are set\n");
 		}
 		ols_check_quota(meta_sk, best_sk, 1);
-		printk(KERN_INFO "ytxing: best_sk:%p sends new skb:%u\n", best_sk, TCP_SKB_CB(skb)->end_seq);
+		mptcp_debug(KERN_INFO "ytxing: best_sk:%p sends new skb:%u\n", best_sk, TCP_SKB_CB(skb)->end_seq);
 		return skb;
 	}
 	
 	/* ytxing: now previous_tp shows we now want to send a redundant packet 
 	 * that stores in priv of previous_tp
 	 */
-	//printk(KERN_INFO "ytxing: ytxing: previous tp, want to send a redundant packet\n");
+	//mptcp_debug(KERN_INFO "ytxing: ytxing: previous tp, want to send a redundant packet\n");
 	
 	previous_tp = ols_cb->previous_tp;
 	ols_p = olssched_get_priv(previous_tp);
@@ -621,12 +621,12 @@ static struct sk_buff *mptcp_ols_next_segment(struct sock *meta_sk,
 	 if(redundant_skb) {
 		second_sk = ols_get_second_subflow(meta_sk, redundant_skb);
 		if(!second_sk) {
-			printk(KERN_INFO "ytxing: Nothing to send, second_sk is NULL\n");
+			mptcp_debug(KERN_INFO "ytxing: Nothing to send, second_sk is NULL\n");
 			redundant_skb = NULL;
 			goto reset;
 		}
 		if (unlikely(!mptcp_rr_is_available(second_sk, redundant_skb, true, true))) {
-			printk(KERN_INFO "ytxing: Nothing to send, cwnd_check [second_sk,%p is not allowed to send redundant_skb,%u]\n", second_sk, TCP_SKB_CB(redundant_skb)->end_seq);
+			mptcp_debug(KERN_INFO "ytxing: Nothing to send, cwnd_check [second_sk,%p is not allowed to send redundant_skb,%u]\n", second_sk, TCP_SKB_CB(redundant_skb)->end_seq);
 			redundant_skb = NULL;
 			goto reset;
 		}
@@ -638,12 +638,12 @@ static struct sk_buff *mptcp_ols_next_segment(struct sock *meta_sk,
 
 		*subsk = second_sk;
 		if (TCP_SKB_CB(redundant_skb)->path_mask){
-			printk(KERN_INFO "ytxing: sk:%p redundant_skb:%u\n", second_sk, TCP_SKB_CB(redundant_skb)->end_seq);
+			mptcp_debug(KERN_INFO "ytxing: sk:%p redundant_skb:%u\n", second_sk, TCP_SKB_CB(redundant_skb)->end_seq);
 			*reinject = -1;//important
 		}
 	}
 reset:
-	//printk(KERN_INFO "ytxing: ytxing: Reset cb and priv\n");
+	//mptcp_debug(KERN_INFO "ytxing: ytxing: Reset cb and priv\n");
 	ols_cb->previous_tp = NULL;
 	ols_p->skb = NULL;
 	ols_p->skb_end_seq = 0;
@@ -657,7 +657,7 @@ static void ols_init(struct sock *sk)
 	struct olssched_priv_out *ols_p_out = olssched_get_priv_out(tcp_sk(sk));
 	ols_p_out->real_priv = kzalloc(sizeof(struct olssched_priv), GFP_KERNEL);
 	ols_p = olssched_get_priv(tcp_sk(sk));
-	printk(KERN_INFO "ytxing: ols_init sk:%p\n", sk);
+	mptcp_debug(KERN_INFO "ytxing: ols_init sk:%p\n", sk);
 	ols_cb->previous_tp = NULL;
 	ols_p->skb_end_seq = 0;
 	ols_p->skb = NULL;
