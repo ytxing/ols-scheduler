@@ -135,17 +135,6 @@ zero_wnd_test:
 	return true;
 }
 
-/* Are we not allowed to reinject this skb on tp? */
-static int mptcp_rr_dont_reinject_skb(const struct tcp_sock *tp, const struct sk_buff *skb)
-{
-	/* If the skb has already been enqueued in this sk, try to find
-	 * another one.
-	 */
-	return skb &&
-		/* Has the skb already been enqueued into this subsocket? */
-		mptcp_pi_to_flag(tp->mptcp->path_index) & TCP_SKB_CB(skb)->path_mask;
-}
-
 static u32 ols_get_rate(struct sock* sk)
 {
 	return sk->sk_pacing_rate;
@@ -438,61 +427,6 @@ bool overlap_check(struct sock *meta_sk, struct sk_buff *skb )
 	return true;
 }
 
-
-/* We just look for any subflow that is available */
-static struct sock *ols_get_available_subflow(struct sock *meta_sk,
-					     struct sk_buff *skb,
-					     bool zero_wnd_test)
-{
-	const struct mptcp_cb *mpcb = tcp_sk(meta_sk)->mpcb;
-	struct sock *sk = NULL, *bestsk = NULL, *backupsk = NULL;
-	struct mptcp_tcp_sock *mptcp;
-
-	mptcp_debug(KERN_INFO "ytxing: ***********************ols_get_available_subflow**************************\n");
-	/* Answer data_fin on same subflow!!! */
-	if (meta_sk->sk_shutdown & RCV_SHUTDOWN &&
-	    skb && mptcp_is_data_fin(skb)) {
-		mptcp_for_each_sub(mpcb, mptcp) {
-			sk = mptcp_to_sock(mptcp);
-			if (tcp_sk(sk)->mptcp->path_index == mpcb->dfin_path_index &&
-			    mptcp_rr_is_available(sk, skb, zero_wnd_test, true))
-				return sk;
-		}
-	}
-
-	/* First, find the best subflow */
-	mptcp_for_each_sub(mpcb, mptcp) {
-		struct tcp_sock *tp;
-
-		sk = mptcp_to_sock(mptcp);
-		tp = tcp_sk(sk);
-
-		//if (!mptcp_rr_is_available(sk, skb, zero_wnd_test, true))
-		if (!mptcp_rr_is_available(sk, skb, zero_wnd_test, false))//ytxing: we dont need cwnd test
-			continue;
-
-		if (mptcp_rr_dont_reinject_skb(tp, skb)) {
-			backupsk = sk;
-			continue;
-		}
-
-		bestsk = sk;
-	}
-
-	if (bestsk) {
-		sk = bestsk;
-	} else if (backupsk) {
-		/* It has been sent on all subflows once - let's give it a
-		 * chance again by restarting its pathmask.
-		 */
-		if (skb)
-			TCP_SKB_CB(skb)->path_mask = 0;
-		sk = backupsk;
-	}
-
-	return sk;
-}
-
 /* Returns the next segment to be sent from the mptcp meta-queue.
  * (chooses the reinject queue if any segment is waiting in it, otherwise,
  * chooses the normal write queue).
@@ -526,7 +460,6 @@ static struct sk_buff *mptcp_ols_next_segment(struct sock *meta_sk,
 					     struct sock **subsk,
 					     unsigned int *limit)
 {
-	mptcp_debug(KERN_INFO "ytxing: ***********************mptcp_ols_next_segment**************************\n");
 	struct sk_buff *skb = __mptcp_ols_next_segment(meta_sk, reinject);
 	struct tcp_sock *meta_tp = tcp_sk(meta_sk);
 	struct sock *best_sk = NULL, *second_sk = NULL;
