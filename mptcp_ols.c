@@ -70,7 +70,7 @@ static void olssched_correct_skb_pointers(struct sock *meta_sk,
 		 	ols_p->skb = NULL;
 		 }
 }
-/* If the sub-socket sk available to send the skb? */
+/* If the sub-socket sk available to send the skb */
 static bool mptcp_rr_is_available(const struct sock *sk, const struct sk_buff *skb,
 				  bool zero_wnd_test, bool cwnd_test)
 {
